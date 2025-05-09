@@ -1,0 +1,115 @@
+//I,introduce inheritance in this management system 
+#include <iostream>
+#include <string>
+using namespace std;
+
+// Base Class
+class Person {
+protected:
+    string name, contact;
+    int age, id;
+
+public:
+    Person() {}
+    Person(string n, int a, int i, string c) {
+        name = n; age = a; id = i; contact = c;
+    }
+
+    virtual void displayDetails() {
+        cout << "Name: " << name << ", Age: " << age << ", ID: " << id << ", Contact: " << contact << endl;
+    }
+
+    virtual float calculatePayment() { return 0.0f; }
+    virtual ~Person() {}
+};
+
+class Student : public Person {
+    string program;
+    float gpa;
+
+public:
+    Student(string n, int a, int i, string c, string prog, float g)
+        : Person(n, a, i, c), program(prog), gpa(g) {}
+
+    void displayDetails() override {
+        Person::displayDetails();
+        cout << "Program: " << program << ", GPA: " << gpa << endl;
+    }
+
+    float calculatePayment() override { return 12000; }
+};
+
+class Professor : public Person {
+    string department;
+    string role;
+
+public:
+    Professor(string n, int a, int i, string c, string d, string r)
+        : Person(n, a, i, c), department(d), role(r) {}
+
+    void displayDetails() override {
+        Person::displayDetails();
+        cout << "Department: " << department << ", Role: " << role << endl;
+    }
+
+    float calculatePayment() override {
+        if (role == "Assistant") return 50000;
+        else if (role == "Associate") return 60000;
+        else return 70000;
+    }
+};
+
+class Course {
+    string code, title;
+    int credits;
+    Professor* instructor; // Aggregation
+
+public:
+    Course(string c, string t, int cr, Professor* p)
+        : code(c), title(t), credits(cr), instructor(p) {}
+
+    void showCourse() {
+        cout << "Course: " << code << ", Title: " << title << ", Credits: " << credits << endl;
+        cout << "Instructor Details:\n";
+        instructor->displayDetails();
+    }
+};
+
+class Department {
+    string name;
+    Professor* prof;
+
+public:
+    Department(string n, Professor* p) : name(n), prof(p) {}
+
+    void showDepartment() {
+        cout << "Department: " << name << "\nProfessor:\n";
+        prof->displayDetails();
+    }
+};
+
+// ===== Main Function =====
+int main() {
+    // Creating objects
+    Student s1("TUSHAR", 18, 101, "7894561232", "B.Tech", 3.5);
+    Professor p1("Dr. SWATI", 30, 201, "8888888888", "Computer Science", "PROFESSOR");
+
+    Course c1("CS101", "FOCP", 3, &p1);
+    Department d1("CSE", &p1);
+
+    // Using polymorphism
+    Person* arr[2];
+    arr[0] = &s1;
+    arr[1] = &p1;
+
+    for (int i = 0; i < 2; i++) {
+        arr[i]->displayDetails();
+        cout << "Payment: Rs." << arr[i]->calculatePayment() << "\n\n";
+    }
+
+    c1.showCourse();
+    cout << "\n";
+    d1.showDepartment();
+
+    return 0;
+}
