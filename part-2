@@ -1,0 +1,139 @@
+#include <iostream>
+#include <string>
+using namespace std;
+
+class Person {
+private:
+    string name, contact;
+    int age, id;
+public:
+    Person(const string& n="",int a=0,int i=0,const string& c=""){
+        if(!n.empty()) name=n;
+        if(a>0&&a<120) age=a;
+        id=i; contact=c;
+    }
+    ~Person() {}
+    virtual void display() const {
+        cout<<"Name:"<<name<<",Age:"<<age<<",ID:"<<id<<",Contact:"<<contact<<"\n";
+    }
+    virtual float pay() const { return 0; }
+};
+
+class Student : public Person {
+private:
+    string prog;
+    float gpa;
+public:
+    Student(const string& n="",int a=0,int i=0,const string& c="",
+            const string& p="",float g=0)
+      : Person(n,a,i,c), prog(p), gpa((g>=0&&g<=4)?g:0) {}
+    ~Student() {}
+    void display() const override {
+        Person::display();
+        cout<<"Program:"<<prog<<",GPA:"<<gpa<<"\n";
+    }
+    float pay() const override { return 10000; }
+};
+
+class Professor : public Person {
+private:
+    string dept, spec, hire;
+public:
+    Professor(const string& n="",int a=0,int i=0,const string& c="",
+              const string& d="",const string& s="",const string& h="")
+      : Person(n,a,i,c), dept(d), spec(s), hire(h) {}
+    ~Professor() {}
+    void display() const override {
+        Person::display();
+        cout<<"Dept:"<<dept<<",Spec:"<<spec<<",Hire:"<<hire<<"\n";
+    }
+    float pay() const override { return 50000; }
+};
+
+class Course {
+private:
+    string code, title;
+    int cr;
+public:
+    Course(const string& co="",const string& t="",int c=0)
+      : code(co), title(t), cr(c>0?c:0) {}
+    void show() const { cout<<code<<" "<<title<<" "<<cr<<"\n"; }
+};
+
+class Department {
+private:
+    string name, loc;
+    float bud;
+public:
+    Department(const string& n="",const string& l="",float b=0)
+      : name(n), loc(l), bud(b) {}
+    void show() const { cout<<name<<" "<<loc<<" "<<bud<<"\n"; }
+};
+
+// ——— Part: Encapsulation ———
+class GradeBook {
+private:
+    int ids[10], ct=0;
+    float gr[10];
+public:
+    void add(int i,float g){
+        if(ct<10 && g>=0&&g<=100) { ids[ct]=i; gr[ct]=g; ct++; }
+    }
+    float avg() const {
+        float s=0; for(int i=0;i<ct;i++) s+=gr[i];
+        return ct ? s/ct : 0;
+    }
+    float hi() const {
+        float m=0; for(int i=0;i<ct;i++) if(gr[i]>m) m=gr[i];
+        return m;
+    }
+    void fail() const {
+        for(int i=0;i<ct;i++) if(gr[i]<40) cout<<"Fail:"<<ids[i]<<"\n";
+    }
+};
+
+class Enrollment {
+private:
+    int arr[5][10], cnt[5]={0};
+public:
+    void enroll(int c,int s){
+        if(c<5 && cnt[c]<10) arr[c][cnt[c]++]=s;
+    }
+    void drop(int c,int s){
+        if(c<5) for(int i=0;i<cnt[c];i++)
+            if(arr[c][i]==s){
+                for(int j=i;j<cnt[c]-1;j++)
+                    arr[c][j]=arr[c][j+1];
+                cnt[c]--; break;
+            }
+    }
+    int count(int c) const { return c<5 ? cnt[c] : 0; }
+};
+
+int main(){
+    // two of each
+    Student    s1("TUSHAR",19,284,"8860","B.tech",3.8), s2("GOTTIYA",17,279,"9821","B.phrm",2.1);
+    Professor  p1("SWATI",30,101,"9988","B.TECh","CSE","2024-25"), p2("RICHA",30,102,"9888","B.TECH","AI","2024-25");
+    Course     c1("CS101","FOCP1",3), c2("CS102","FOCP2",4);
+    Department d1("CSE","L1",1000), d2("CSE","L2",2000);
+
+    // polymorphism
+    Person* arr[4] = { &s1,&s2,&p1,&p2 };
+    for(auto x:arr){
+        x->display();
+        cout<<"Pay:"<<x->pay()<<"\n";
+    }
+
+    c1.show(); c2.show();
+    d1.show(); d2.show();
+
+    GradeBook gb;
+    gb.add(1,90); gb.add(2,35);
+    cout<<"Avg:"<<gb.avg()<<", Hi:"<<gb.hi()<<"\n";
+    gb.fail();
+    Enrollment em;
+    em.enroll(0,1); em.enroll(0,2); em.drop(0,2);
+    cout<<"Enroll0:"<<em.count(0)<<"\n";
+
+    return 0;
+}
