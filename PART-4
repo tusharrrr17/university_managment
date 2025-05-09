@@ -1,0 +1,184 @@
+ 
+#include <iostream>
+#include <string>
+#include <exception>
+#include <fstream>
+using namespace std;
+// these are specific error handler like if enrollment is full or wrong calculation in payment or wrong grade are provide to one these exception cases.
+class UniversitySystemException : public exception {
+    string msg;
+public:
+    UniversitySystemException(const string& m) : msg(m) {}
+    const char* what() const noexcept override { return msg.c_str(); }
+};
+class EnrollmentException : public UniversitySystemException {
+public:
+    EnrollmentException(const string& m) : UniversitySystemException(m) {}
+};
+class GradeException : public UniversitySystemException {
+public:
+    GradeException(const string& m) : UniversitySystemException(m) {}
+};
+class PaymentException : public UniversitySystemException {
+public:
+    PaymentException(const string& m) : UniversitySystemException(m) {}
+};
+
+// Basic Person Classes
+class Person {
+protected:
+    string name, contact;
+    int age, id;
+public:
+    Person(string n="", int a=0, int i=0, string c="") : name(n), age(a), id(i), contact(c) {
+        if(n.empty()) throw UniversitySystemException("Name cannot be empty");
+        if(a<=0 || a>=120) throw UniversitySystemException("Invalid age");
+    }
+    virtual ~Person() {}
+    virtual void display() const {
+        cout << "ID:" << id << ", Name:" << name << ", Age:" << age << ", Contact:" << contact << endl;
+    }
+    virtual float calculatePay() const { return 0.0; }
+    int getId() const { return id; }
+};
+
+class Student : public Person {
+    string program;
+public:
+    Student(string n, int a, int i, string c, string p) : Person(n,a,i,c), program(p) {}
+    float calculatePay() const override { return 10000; }
+    void display() const override {
+        Person::display();
+        cout << "Program: " << program << endl;
+    }
+};
+
+class Professor : public Person {
+    string dept, role;
+public:
+    Professor(string n, int a, int i, string c, string d, string r) : Person(n,a,i,c), dept(d), role(r) {}
+    float calculatePay() const override {
+        if(role == "Assistant") return 50000;
+        if(role == "Associate") return 60000;
+        return 70000;
+    }
+    void display() const override {
+        Person::display();
+        cout << "Dept: " << dept << ", Role: " << role << endl;
+    }
+};
+
+class Course {
+    string code;
+    int studentIds[10], count;
+    float grades[10];
+    Professor* prof;
+public:
+    Course(string c="") : code(c), count(0), prof(nullptr) {}
+    string getCode() const { return code; }
+    void assignProf(Professor* p) { prof = p; }
+    void enroll(int id) {
+        if(count >= 10) throw EnrollmentException("Course full");
+        studentIds[count++] = id;
+    }
+    void grade(int id, float g) {
+        if(g < 0 || g > 100) throw GradeException("Invalid grade");
+        for(int i=0; i<count; i++) {
+            if(studentIds[i] == id) { grades[i] = g; return; }
+        }
+        throw GradeException("Student not enrolled");
+    }
+    void report() const {
+        cout << "Course: " << code << ", Prof: ";
+        if(prof) prof->display();
+        for(int i=0; i<count; i++) {
+            cout << "Student ID: " << studentIds[i] << ", Grade: " << grades[i] << endl;
+        }
+    }
+};
+
+// University System
+class UniversitySystem {
+    Student* studs[10]; int sc = 0;
+    Professor* profs[5]; int pc = 0;
+    Course* courses[5]; int cc = 0;
+
+    void logError(const string& msg) {
+        ofstream f("error.log", ios::app);
+        f << msg << endl;
+    }
+
+public:
+    void addStudent() {
+        string n,c,p; int a,i;
+        cout << "Enter Name, Age, ID, Contact, Program: ";
+        cin >> n >> a >> i >> c >> p;
+        studs[sc++] = new Student(n,a,i,c,p);
+    }
+    void addProfessor() {
+        string n,c,d,r; int a,i;
+        cout << "Enter Name, Age, ID, Contact, Dept, Role: ";
+        cin >> n >> a >> i >> c >> d >> r;
+        profs[pc++] = new Professor(n,a,i,c,d,r);
+    }
+    void addCourse() {
+        string c; cout << "Course Code: "; cin >> c;
+        courses[cc++] = new Course(c);
+    }
+    void enrollStudent() {
+        int sid; string c;
+        cout << "Student ID & Course Code: "; cin >> sid >> c;
+        for(int i=0;i<cc;i++) if(courses[i]->getCode()==c) { courses[i]->enroll(sid); return; }
+        throw EnrollmentException("Course not found");
+    }
+    void assignProf() {
+        int pid; string c;
+        cout << "Prof ID & Course Code: "; cin >> pid >> c;
+        Professor* p = nullptr;
+        for(int i=0;i<pc;i++) if(profs[i]->getId()==pid) p = profs[i];
+        for(int i=0;i<cc;i++) if(courses[i]->getCode()==c) { courses[i]->assignProf(p); return; }
+        throw EnrollmentException("Course not found");
+    }
+    void gradeStudent() {
+        int sid; string c; float g;
+        cout << "Student ID, Course Code, Grade: "; cin >> sid >> c >> g;
+        for(int i=0;i<cc;i++) if(courses[i]->getCode()==c) { courses[i]->grade(sid,g); return; }
+        throw GradeException("Course not found");
+    }
+    void showReports() {
+        for(int i=0;i<cc;i++) courses[i]->report();
+    }
+    void calcPayments() {
+        for(int i=0;i<sc;i++) cout << "Student Pay: " << studs[i]->calculatePay() << endl;
+        for(int i=0;i<pc;i++) cout << "Professor Pay: " << profs[i]->calculatePay() << endl;
+    }
+
+    void menu() {
+        int ch;
+        do {
+            cout << "\n1-AddStudent 2-AddProf 3-AddCourse 4-Enroll 5-AssignProf 6-Grade 7-Reports 8-Payments 0-Exit\nChoice: ";
+            cin >> ch;
+            try {
+                switch(ch) {
+                    case 1: addStudent(); break;
+                    case 2: addProfessor(); break;
+                    case 3: addCourse(); break;
+                    case 4: enrollStudent(); break;
+                    case 5: assignProf(); break;
+                    case 6: gradeStudent(); break;
+                    case 7: showReports(); break;
+                    case 8: calcPayments(); break;
+                }
+            } catch(UniversitySystemException& e) {
+                cout << "Error: " << e.what() << endl;
+                logError(e.what());
+            }
+        } while(ch != 0);
+    }
+};
+
+int main() {
+    UniversitySystem u;
+    u.menu();
+    return 0;
+}
